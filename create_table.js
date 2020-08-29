@@ -10,7 +10,7 @@ var dynamodb = new AWS.DynamoDB();
 var barcode_params = {
     TableName : "Barcode",
     AttributeDefinitions: [
-        { AttributeName : "id", AttributeType: "N" }, // 제품 아이디
+        { AttributeName : "id", AttributeType: "S" }, // 제품 아이디
         // { AttributeName : "name", AttributeType: "S" }, // 제품명
         // { AttributeName : "shelf_life", AttributeType: "S" }, // 유통기한
         // { AttributeName : "food_type", AttributeType: "S" }, // 식품 유형
@@ -29,7 +29,7 @@ var barcode_params = {
 var recipe_params = {
     TableName : "Recipe",
     AttributeDefinitions: [
-        { AttributeName : "id", AttributeType: "N" },
+        { AttributeName : "id", AttributeType: "S" },
         // { AttributeName : "name", AttributeType: "S" }, // 메뉴명
         // { AttributeName : "way", AttributeType: "S" }, // 조리방법
         // { AttributeName : "type", AttributeType: "S" }, // 요리종류
@@ -96,7 +96,7 @@ var recipe_params = {
 var user_params = {
     TableName : "User",
     AttributeDefinitions: [
-        { AttributeName : "id", AttributeType : "N" }, // 유저 아이디
+        { AttributeName : "id", AttributeType : "S" }, // 유저 아이디
         // { AttributeName : "name", AttributeType : "S" }, // 유저 이름
         // { AttributeName : "gender", AttributeType : "S" }, // 유저 성별
         // { AttributeName : "age", AttributeType : "N" }, // 유저 나이
@@ -114,7 +114,7 @@ var user_params = {
 var food_params = {
     TableName : "Food",
     AttributeDefinitions: [
-        { AttributeName : "id", AttributeType : "N" }, // 식품 등록 아이디
+        { AttributeName : "id", AttributeType : "S" }, // 식품 등록 아이디
         // { AttributeName : "uid", AttributeType : "N" }, // 유저 아이디
         // { AttributeName : "bid", AttributeType : "N" }, // 바코드 아이디
         // { AttributeName : "registerDateTime", AttributeType : "S" } // 등록일자 및 시간
