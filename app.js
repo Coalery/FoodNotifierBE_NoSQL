@@ -55,9 +55,9 @@ app.use((request, response, next) => {
     response.status(404).send('Not Found');
 });
 
-app.use((err, request, response, next) => {
-   response.status(500).send('Error occurred.');
-});
+// app.use((err, request, response, next) => {
+//    response.status(500).send('Error occurred.');
+// });
 
 // ----------------------------------
 //            SERVER START
