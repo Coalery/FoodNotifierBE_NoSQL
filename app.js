@@ -26,6 +26,23 @@ app.get('/', (request, response) => {
 //               GET
 // ----------------------------------
 
+app.get('/barcode/:barcode', (request, response) => {
+    var params = {
+        TableName: table,
+        Key:{
+            "barcode": request.params.barcode
+        }
+    };
+
+    docClient.get(params, function(err, data) {
+        if (err) {
+            response.send(JSON.stringify(err, null, 2));
+        } else {
+            response.send(JSON.stringify(data, null, 2));
+        }
+    });
+})
+
 // ----------------------------------
 //                POST
 // ----------------------------------
@@ -33,6 +50,14 @@ app.get('/', (request, response) => {
 // ----------------------------------
 //           ERROR PROCESS
 // ----------------------------------
+
+app.use((request, response, next) => {
+    response.status(404).send('Not Found');
+});
+
+app.use((err, request, response, next) => {
+   response.status(500).send('Error occurred.');
+});
 
 // ----------------------------------
 //            SERVER START
