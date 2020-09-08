@@ -28,7 +28,7 @@ app.get('/', (request, response) => {
 
 app.get('/barcode/:barcode', (request, response) => {
     var params = {
-        TableName: table,
+        TableName: BarcodeTable,
         Key:{
             "barcode": request.params.barcode
         }
