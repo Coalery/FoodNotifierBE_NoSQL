@@ -34,14 +34,25 @@ app.get('/barcode/:barcode', (request, response) => {
         }
     };
 
-    docClient.get(params, function(err, data) {
+    docClient.scan(params, function(err, data) {
         if (err) {
-            response.send(JSON.stringify(err, null, 2));
+            response.send("Unable to scan the table. Error JSON:\n" +  JSON.stringify(err, null, 2));
         } else {
-            response.send(JSON.stringify(data, null, 2));
+            console.log("Scan Succeeded.");
+            data.Items.forEach(() => {
+                response.send(JSON.stringify(data, null, 2));
+            });
+
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                console.log("Scanning for more...");
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            }
         }
     });
 })
+
+// https://stackoverflow.com/questions/44589967/how-to-fetch-scan-all-items-from-aws-dynamodb-using-node-js
 
 // ----------------------------------
 //                POST
