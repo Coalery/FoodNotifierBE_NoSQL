@@ -57,6 +57,8 @@ app.get('/barcode/:barcode', (request, response) => {
     }
 })
 
+// https://stackoverflow.com/questions/44589967/how-to-fetch-scan-all-items-from-aws-dynamodb-using-node-js
+
 // ----------------------------------
 //                POST
 // ----------------------------------
