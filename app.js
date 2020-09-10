@@ -29,18 +29,32 @@ app.get('/', (request, response) => {
 app.get('/barcode/:barcode', (request, response) => {
     var params = {
         TableName: BarcodeTable,
-        Key:{
-            "barcode": request.params.barcode
+        FilterExpression: "#barcode = :barcode",
+        ExpressionAttributeNames:{
+            "#barcode": "barcode",
+        },
+        ExpressionAttributeValues: {
+            ":barcode": request.params.barcode,
         }
     };
 
-    docClient.get(params, function(err, data) {
-        if (err) {
-            response.send(JSON.stringify(err, null, 2));
-        } else {
-            response.send(JSON.stringify(data, null, 2));
+    result = '';
+    docClient.scan(params, onScan);
+
+    function onScan(err, data) {
+        if (!err) {
+            data.Items.forEach((itemdata) => {
+                result = JSON.stringify(itemdata); // Just One Item
+            });
+            
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                response.send(result);
+            }
         }
-    });
+    }
 })
 
 // ----------------------------------
@@ -63,7 +77,7 @@ app.use((request, response, next) => {
 //            SERVER START
 // ----------------------------------
 
-app.listen(3000, () => console.log('Server On Successfully.'));
+app.listen(3000, () => console.log('Server On Successfully!'));
 
 // var table = "Recipe";
 
