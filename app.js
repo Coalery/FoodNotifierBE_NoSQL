@@ -38,7 +38,7 @@ app.get('/barcode/:barcode', (request, response) => {
         }
     };
 
-    result = '';
+    result = '{}';
     docClient.scan(params, onScan);
 
     function onScan(err, data) {
@@ -47,6 +47,37 @@ app.get('/barcode/:barcode', (request, response) => {
                 result = JSON.stringify(itemdata); // Just One Item
             });
             
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                response.send(result);
+            }
+        }
+    }
+})
+
+app.get('/recipe/:recipe', (request, response) => {
+    var params = {
+        TableName: RecipeTable,
+        FilterExpression: "#recipe = :recipe",
+        ExpressionAttributeNames:{
+            "#recipe": "recipe",
+        },
+        ExpressionAttributeValues: {
+            ":recipe": request.params.recipe,
+        }
+    };
+
+    result = '{}';
+    docClient.scan(params, onScan);
+
+    function onScan(err, data) {
+        if (!err) {
+            data.Items.forEach((itemdata) => {
+                result = JSON.stringify(itemdata); // Just One Item
+            });
+
             if(typeof data.LastEvaluatedKey != "undefined") {
                 params.ExclusiveStartKey = data.LastEvaluatedKey;
                 docClient.scan(params, onScan);
