@@ -46,7 +46,6 @@ app.get('/barcode/:barcode', (request, response) => {
             data.Items.forEach((itemdata) => {
                 result = JSON.stringify(itemdata); // Just One Item
             });
-            
             if(typeof data.LastEvaluatedKey != "undefined") {
                 params.ExclusiveStartKey = data.LastEvaluatedKey;
                 docClient.scan(params, onScan);
@@ -60,14 +59,17 @@ app.get('/barcode/:barcode', (request, response) => {
 app.get('/recipe/:recipe', (request, response) => {
     var params = {
         TableName: RecipeTable,
-        FilterExpression: "#recipe = :recipe",
+        FilterExpression: "contains(#recipe, :recipe)",
         ExpressionAttributeNames:{
-            "#recipe": "recipe",
+//            "#recipe": "name",
+              "#recipe": "id"
         },
         ExpressionAttributeValues: {
-            ":recipe": request.params.recipe,
+//            ":recipe": request.params.recipe,
+              ":recipe": "1010"
         }
     };
+    console.log(request.params.recipe);
 
     result = '{}';
     docClient.scan(params, onScan);
@@ -87,8 +89,6 @@ app.get('/recipe/:recipe', (request, response) => {
         }
     }
 })
-
-// https://stackoverflow.com/questions/44589967/how-to-fetch-scan-all-items-from-aws-dynamodb-using-node-js
 
 // ----------------------------------
 //                POST
