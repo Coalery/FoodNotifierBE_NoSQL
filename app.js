@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 
 var app = express();
 
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended : false}));
 
 AWS.config.update({
@@ -38,18 +39,22 @@ app.get('/barcode/:barcode', (request, response) => {
         }
     };
 
-    result = '{}';
     docClient.scan(params, onScan);
+    var found = false;
 
     function onScan(err, data) {
-        if (!err) {
+        if(found) return;
+        if(!err) {
             data.Items.forEach((itemdata) => {
-                result = JSON.stringify(itemdata); // Just One Item
+                response.send(JSON.stringify(itemdata)); // Just One Item
+                found = true;
+                return;
             });
             if(typeof data.LastEvaluatedKey != "undefined") {
                 params.ExclusiveStartKey = data.LastEvaluatedKey;
                 docClient.scan(params, onScan);
             } else {
+                if(found) return;
                 response.send(result);
             }
         }
@@ -61,38 +66,77 @@ app.get('/recipe/:recipe', (request, response) => {
         TableName: RecipeTable,
         FilterExpression: "contains(#recipe, :recipe)",
         ExpressionAttributeNames:{
-//            "#recipe": "name",
-              "#recipe": "id"
+              "#recipe": "ingredients"
         },
         ExpressionAttributeValues: {
-//            ":recipe": request.params.recipe,
-              ":recipe": "1010"
+              ":recipe": request.params.recipe
         }
     };
-    console.log(request.params.recipe);
 
-    result = '{}';
+    result = [];
     docClient.scan(params, onScan);
 
     function onScan(err, data) {
         if (!err) {
             data.Items.forEach((itemdata) => {
-                result = JSON.stringify(itemdata); // Just One Item
+                result.push(itemdata);
             });
 
             if(typeof data.LastEvaluatedKey != "undefined") {
                 params.ExclusiveStartKey = data.LastEvaluatedKey;
                 docClient.scan(params, onScan);
             } else {
-                response.send(result);
+                response.send(JSON.stringify({"result" : result}));
             }
         }
     }
 })
 
+app.get('/user/:uid', (request, response) => {
+    var params = {
+        TableName: UserTable,
+        FilterExpression: "#id = :uid",
+        ExpressionAttributeNames:{
+            "#id": "id",
+        },
+        ExpressionAttributeValues: {
+            ":uid": request.params.uid
+        }
+    };
+
+    docClient.scan(params, onScan);
+    var found = false;
+
+    function onScan(err, data) {
+        if(found) return;
+        if(!err) {
+            data.Items.forEach((itemdata) => {
+                response.send(JSON.stringify(itemdata)); // Just One Item
+                found = true;
+                return;
+            });
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                if(found) return;
+                response.send('{}');
+            }
+        }
+    }
+})
+
+app.get('/outofdatefoods/:uid', (request, response) => {
+    response.send('{}');
+})
+
 // ----------------------------------
 //                POST
 // ----------------------------------
+
+app.post('/adduser', (request, response) => {
+    response.send(request.body.name);
+})
 
 // ----------------------------------
 //           ERROR PROCESS
