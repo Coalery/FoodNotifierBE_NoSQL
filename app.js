@@ -1,8 +1,12 @@
+const fs = require('fs');
 const AWS = require('aws-sdk');
 const express = require('express');
 const bodyParser = require('body-parser');
 
 var app = express();
+
+var nextUID = -1;
+var nextFID = -1;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended : false}));
@@ -10,6 +14,12 @@ app.use(bodyParser.urlencoded({extended : false}));
 AWS.config.update({
   region: 'ap-northeast-2',
   endpoint: 'https://dynamodb.ap-northeast-2.amazonaws.com'
+});
+
+fs.readFile('ids', 'utf8', (err, data) => {
+    var obj = JSON.parse(data);
+    nextUID = obj.uid;
+    nextFID = obj.fid;
 });
 
 const RecipeTable = 'Recipe';
@@ -22,6 +32,13 @@ var docClient = new AWS.DynamoDB.DocumentClient();
 app.get('/', (request, response) => {
     response.send('Hmmm');
 })
+
+function saveIDJson() {
+    var obj = {uid: nextUID, fid: nextFID};
+    var json = JSON.stringify(obj);
+    console.log(obj, json);
+    fs.writeFile('ids', json, 'utf8', (err) => {});
+}
 
 // ----------------------------------
 //               GET
@@ -135,7 +152,28 @@ app.get('/outofdatefoods/:uid', (request, response) => {
 // ----------------------------------
 
 app.post('/adduser', (request, response) => {
-    response.send(request.body.name);
+    var params = {
+        TableName: UserTable,
+        Item: {
+            id: String(nextUID),
+            name: request.body.name,
+            age: Number(request.body.age),
+            gender: request.body.gender,
+            job: request.body.job
+        }
+    };
+    docClient.put(params, (err, data) => {
+        var message = '';
+        if(err) {
+            message = JSON.stringify({"status" : "error", "info" : err});
+        } else {
+            message = JSON.stringify({"status" : "success", "uid" : String(nextUID),  "info" : data});
+        }
+        console.log(message);
+        response.send(message);
+    });
+    nextUID = nextUID + 1;
+    saveIDJson();
 })
 
 // ----------------------------------
