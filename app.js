@@ -110,37 +110,25 @@ app.get('/recipe/:recipe', (request, response) => {
 })
 
 app.get('/user/:uid', (request, response) => {
+    console.log('Get user request:', request.params.uid);
+
     var params = {
         TableName: UserTable,
-        FilterExpression: "#id = :uid",
-        ExpressionAttributeNames:{
-            "#id": "id",
-        },
-        ExpressionAttributeValues: {
-            ":uid": request.params.uid
+        Key: {
+            "id": request.params.uid
         }
     };
 
-    docClient.scan(params, onScan);
-    var found = false;
-
-    function onScan(err, data) {
-        if(found) return;
-        if(!err) {
-            data.Items.forEach((itemdata) => {
-                response.send(JSON.stringify(itemdata)); // Just One Item
-                found = true;
-                return;
-            });
-            if(typeof data.LastEvaluatedKey != "undefined") {
-                params.ExclusiveStartKey = data.LastEvaluatedKey;
-                docClient.scan(params, onScan);
-            } else {
-                if(found) return;
-                response.send('{}');
-            }
+    docClient.get(params, (err, data) => {
+        var message = '';
+        if(err) {
+            message = JSON.stringify({"status" : "error", "info" : err});
+        } else {
+            message = JSON.stringify({"status" : "success", "info" : data.Item});
         }
-    }
+        console.log(message);
+        response.send(message);
+    });
 })
 
 app.get('/outofdatefoods/:uid', (request, response) => {
@@ -168,12 +156,12 @@ app.post('/adduser', (request, response) => {
             message = JSON.stringify({"status" : "error", "info" : err});
         } else {
             message = JSON.stringify({"status" : "success", "uid" : String(nextUID),  "info" : data});
+            nextUID = nextUID + 1;
+            saveIDJson();
         }
         console.log(message);
         response.send(message);
     });
-    nextUID = nextUID + 1;
-    saveIDJson();
 })
 
 // ----------------------------------
