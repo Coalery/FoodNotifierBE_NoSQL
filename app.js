@@ -23,7 +23,7 @@ fs.readFile('ids', 'utf8', (err, data) => {
 });
 
 const RecipeTable = 'Recipe';
-const BarcodeTable = 'Barcode';
+const BarcodeTable = 'Barcode2';
 const UserTable = 'User';
 const FoodTable = 'Food';
 
@@ -47,35 +47,18 @@ function saveIDJson() {
 app.get('/barcode/:barcode', (request, response) => {
     var params = {
         TableName: BarcodeTable,
-        FilterExpression: "#barcode = :barcode",
-        ExpressionAttributeNames:{
-            "#barcode": "barcode",
-        },
-        ExpressionAttributeValues: {
-            ":barcode": request.params.barcode,
+        Key: {
+            "barcode": request.params.barcode
         }
     };
 
-    docClient.scan(params, onScan);
-    var found = false;
-
-    function onScan(err, data) {
-        if(found) return;
-        if(!err) {
-            data.Items.forEach((itemdata) => {
-                response.send(JSON.stringify(itemdata)); // Just One Item
-                found = true;
-                return;
-            });
-            if(typeof data.LastEvaluatedKey != "undefined") {
-                params.ExclusiveStartKey = data.LastEvaluatedKey;
-                docClient.scan(params, onScan);
-            } else {
-                if(found) return;
-                response.send(result);
-            }
+    docClient.get(params, (err, data) => {
+        if(err) {
+            response.send(JSON.stringify({"status" : false, "info" : err}));
+        } else {
+            response.send(JSON.stringify({"status" : true, "info" : data}));
         }
-    }
+    });
 })
 
 app.get('/barcodeid/:bid', (request, response) => {
