@@ -61,41 +61,6 @@ app.get('/barcode/:barcode', (request, response) => {
     });
 })
 
-app.get('/barcodeid/:bid', (request, response) => {
-    var params = {
-        TableName: BarcodeTable,
-        FilterExpression: "#bid = :bid",
-        ExpressionAttributeNames:{
-              "#bid": "id"
-        },
-        ExpressionAttributeValues: {
-              ":bid": request.params.bid
-        }
-    };
-
-    result = [];
-    docClient.scan(params, onScan);
-
-    function onScan(err, data) {
-        if (!err) {
-            data.Items.forEach((itemdata) => {
-                result.push(itemdata);
-            });
-
-            if(typeof data.LastEvaluatedKey != "undefined") {
-                params.ExclusiveStartKey = data.LastEvaluatedKey;
-                docClient.scan(params, onScan);
-            } else { // End Scan
-                if(result.length == 0) {
-                    response.send('{}');
-                } else {
-                    response.send(JSON.stringify(result[0]));
-                }
-            }
-        }
-    }
-})
-
 app.get('/recipe/:recipe', (request, response) => {
     var params = {
         TableName: RecipeTable,
