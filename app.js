@@ -78,6 +78,41 @@ app.get('/barcode/:barcode', (request, response) => {
     }
 })
 
+app.get('/barcodeid/:bid', (request, response) => {
+    var params = {
+        TableName: BarcodeTable,
+        FilterExpression: "#bid = :bid",
+        ExpressionAttributeNames:{
+              "#bid": "id"
+        },
+        ExpressionAttributeValues: {
+              ":bid": request.params.bid
+        }
+    };
+
+    result = [];
+    docClient.scan(params, onScan);
+
+    function onScan(err, data) {
+        if (!err) {
+            data.Items.forEach((itemdata) => {
+                result.push(itemdata);
+            });
+
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else { // End Scan
+                if(result.length == 0) {
+                    response.send('{}');
+                } else {
+                    response.send(JSON.stringify(result[0]));
+                }
+            }
+        }
+    }
+})
+
 app.get('/recipe/:recipe', (request, response) => {
     var params = {
         TableName: RecipeTable,
@@ -131,8 +166,75 @@ app.get('/user/:uid', (request, response) => {
     });
 })
 
+app.get('/userinfo', (request, response) => {
+    var params = {
+        TableName: UserTable,
+        FilterExpression: "#name = :name and #age = :age and #gender = :gender and #job = :job",
+        ExpressionAttributeNames:{
+            "#name": "name",
+            "#age": "age",
+            "#gender": "gender",
+            "#job": "job"
+        },
+        ExpressionAttributeValues: {
+            ":name": request.query.name,
+            ":age": Number(request.query.age),
+            ":gender": request.query.gender,
+            ":job": request.query.job
+        }
+    };
+
+    docClient.scan(params, onScan);
+    var found = false;
+
+    function onScan(err, data) {
+        if(found) return;
+        if(!err) {
+            data.Items.forEach((itemdata) => {
+                response.send(JSON.stringify({"status" : true, "info" : itemdata})); // Just One Item
+                found = true;
+                return;
+            });
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                if(found) return;
+                response.send(JSON.stringify({"status" : false}));
+            }
+        }
+    }
+})
+
 app.get('/outofdatefoods/:uid', (request, response) => {
-    response.send('{}');
+    var params = {
+        TableName: FoodTable,
+        FilterExpression: "#uid = :uid",
+        ExpressionAttributeNames:{
+            "#uid": "uid",
+        },
+        ExpressionAttributeValues: {
+            ":uid": request.params.uid,
+        }
+    };
+
+    result = [];
+    docClient.scan(params, onScan);
+
+    function onScan(err, data) {
+        if (!err) {
+            data.Items.forEach((itemdata) => {
+                result.push(itemdata);
+            });
+
+            if(typeof data.LastEvaluatedKey != "undefined") {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                response.send(JSON.stringify({"result" : result}));
+            }
+        }
+    }
 })
 
 // ----------------------------------
@@ -164,6 +266,30 @@ app.post('/adduser', (request, response) => {
     });
 })
 
+app.post('/addfood', (request, response) => {
+    var params = {
+        TableName: FoodTable,
+        Item: {
+            id: String(nextFID),
+            uid: request.body.uid,
+            bid: request.body.fid,
+            registerDateTime: request.body.registerDateTime
+        }
+    }
+    docClient.put(params, (err, data) => {
+        var message = '';
+        if(err) {
+            message = JSON.stringify({"status" : "error", "info" : err});
+        } else {
+            message = JSON.stringify({"status" : "success", "fid" : String(nextFID),  "info" : data}); // TODO
+            nextFID = nextFID + 1;
+            saveIDJson();
+        }
+        console.log(message);
+        response.send(message);
+    });
+})
+
 // ----------------------------------
 //           ERROR PROCESS
 // ----------------------------------
@@ -181,22 +307,3 @@ app.use((request, response, next) => {
 // ----------------------------------
 
 app.listen(3000, () => console.log('Server On Successfully!'));
-
-// var table = "Recipe";
-
-// var id = "102";
-
-// var params = {
-//     TableName: table,
-//     Key:{
-//         "id": id
-//     }
-// };
-
-// docClient.get(params, function(err, data) {
-//     if (err) {
-//         console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-//     } else {
-//         console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-//     }
-// });
