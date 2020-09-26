@@ -56,7 +56,7 @@ app.get('/barcode/:barcode', (request, response) => {
         if(err) {
             response.send(JSON.stringify({"status" : false, "info" : err}));
         } else {
-            response.send(JSON.stringify({"status" : true, "info" : data}));
+            response.send(JSON.stringify({"status" : true, "info" : data.Item}));
         }
     });
 })
@@ -105,9 +105,9 @@ app.get('/user/:uid', (request, response) => {
     docClient.get(params, (err, data) => {
         var message = '';
         if(err) {
-            message = JSON.stringify({"status" : "error", "info" : err});
+            message = JSON.stringify({"status" : false, "info" : err});
         } else {
-            message = JSON.stringify({"status" : "success", "info" : data.Item});
+            message = JSON.stringify({"status" : true, "info" : data.Item});
         }
         console.log(message);
         response.send(message);
@@ -133,22 +133,18 @@ app.get('/userinfo', (request, response) => {
     };
 
     docClient.scan(params, onScan);
-    var found = false;
+    var result = JSON.stringify({"status" : false, "info" : {}});
 
     function onScan(err, data) {
-        if(found) return;
         if(!err) {
             data.Items.forEach((itemdata) => {
-                response.send(JSON.stringify({"status" : true, "info" : itemdata})); // Just One Item
-                found = true;
-                return;
+                result = JSON.stringify({"status" : true, "info" : itemdata}); // Just One Item
             });
             if(typeof data.LastEvaluatedKey != "undefined") {
                 params.ExclusiveStartKey = data.LastEvaluatedKey;
                 docClient.scan(params, onScan);
             } else {
-                if(found) return;
-                response.send(JSON.stringify({"status" : false}));
+                response.send(result);
             }
         }
     }
@@ -203,9 +199,9 @@ app.post('/adduser', (request, response) => {
     docClient.put(params, (err, data) => {
         var message = '';
         if(err) {
-            message = JSON.stringify({"status" : "error", "info" : err});
+            message = JSON.stringify({"status" : false, "info" : err});
         } else {
-            message = JSON.stringify({"status" : "success", "uid" : String(nextUID),  "info" : data});
+            message = JSON.stringify({"status" : true, "uid" : String(nextUID),  "info" : data});
             nextUID = nextUID + 1;
             saveIDJson();
         }
@@ -220,16 +216,16 @@ app.post('/addfood', (request, response) => {
         Item: {
             id: String(nextFID),
             uid: request.body.uid,
-            bid: request.body.fid,
+            bid: request.body.bid,
             registerDateTime: request.body.registerDateTime
         }
     }
     docClient.put(params, (err, data) => {
         var message = '';
         if(err) {
-            message = JSON.stringify({"status" : "error", "info" : err});
+            message = JSON.stringify({"status" : false, "info" : err});
         } else {
-            message = JSON.stringify({"status" : "success", "fid" : String(nextFID),  "info" : data}); // TODO
+            message = JSON.stringify({"status" : true, "fid" : String(nextFID),  "info" : data}); // TODO
             nextFID = nextFID + 1;
             saveIDJson();
         }
