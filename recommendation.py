@@ -18,8 +18,8 @@ def recommend_recipes(df_svd_preds, user_id, ori_recipes_df, ori_ratings_df, num
 
     return user_history, recommendations
 
-df_recipe = pd.read_csv('/content/drive/My Drive/Learn/recipe.csv') # Recipe Data Load
-df_ratings = pd.read_csv('/content/drive/My Drive/Learn/ratings.csv', sep='\t') # Ratings Data Load
+df_recipe = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/recipe.csv') # Recipe Data Load
+df_ratings = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/ratings.csv', sep='\t') # Ratings Data Load
 
 df_user_recipe_ratings = df_ratings.pivot(
     index='uid',
