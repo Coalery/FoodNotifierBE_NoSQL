@@ -2,6 +2,7 @@ const fs = require('fs');
 const AWS = require('aws-sdk');
 const express = require('express');
 const bodyParser = require('body-parser');
+const recommendation = require('./run_recommendation_py.js');
 
 var app = express();
 
@@ -179,6 +180,26 @@ app.get('/outofdatefoods/:uid', (request, response) => {
             }
         }
     }
+})
+
+app.get('/recommend/:uid', (request, response) => {
+    recommendation.recommend(request.params.uid, (data) => {
+        data = data.substring(0, data.length - 1);
+        var params = {
+            TableName: RecipeTable,
+            Key: {
+                "id": data
+            }
+        };
+
+        docClient.get(params, (err, data) => {
+            if(err) {
+                response.send(JSON.stringify({"status" : false, "info" : err}));
+            } else {
+                response.send(JSON.stringify({"status" : true, "info" : data.Item}));
+            }
+        });
+    });
 })
 
 // ----------------------------------

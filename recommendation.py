@@ -1,7 +1,9 @@
 from scipy.sparse.linalg import svds
+
 import pandas as pd
 import numpy as np
 import warnings
+import sys
 
 warnings.filterwarnings("ignore")
 
@@ -18,25 +20,36 @@ def recommend_recipes(df_svd_preds, user_id, ori_recipes_df, ori_ratings_df, num
 
     return user_history, recommendations
 
-df_recipe = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/recipe.csv') # Recipe Data Load
-df_ratings = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/ratings.csv', sep='\t') # Ratings Data Load
+def main(argv):
+    user_id = int(sys.argv[1])
 
-df_user_recipe_ratings = df_ratings.pivot(
-    index='uid',
-    columns='rid',
-    values='rating'
-).fillna(0) # Make User - Recipe Pivot Table
+    df_recipe = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/recipe.csv') # Recipe Data Load
+    df_ratings = pd.read_csv('/home/ubuntu/myapp/FoodNotifierBE_NoSQL/csv/ratings.csv', sep='\t') # Ratings Data Load
 
-matrix = df_user_recipe_ratings.to_numpy() # Convert Pivot Table to Numpy Matrix
-user_ratings_mean = np.mean(matrix, axis = 1) # User's Average Rating
-matrix_user_mean = matrix - user_ratings_mean.reshape(-1, 1) # (User-Recipe Matrix) - (Average Rating)
+    df_user_recipe_ratings = df_ratings.pivot(
+        index='uid',
+        columns='rid',
+        values='rating'
+    ).fillna(0) # Make User - Recipe Pivot Table
 
-U, sigma, Vt = svds(matrix_user_mean, k = 1)
-sigma = np.diag(sigma)
+    matrix = df_user_recipe_ratings.to_numpy() # Convert Pivot Table to Numpy Matrix
+    user_ratings_mean = np.mean(matrix, axis = 1) # User's Average Rating
+    matrix_user_mean = matrix - user_ratings_mean.reshape(-1, 1) # (User-Recipe Matrix) - (Average Rating)
 
-svd_user_predicted_ratings = np.dot(np.dot(U, sigma), Vt) + user_ratings_mean.reshape(-1, 1)
-df_svd_preds = pd.DataFrame(svd_user_predicted_ratings, columns = df_user_recipe_ratings.columns)
+    U, sigma, Vt = svds(matrix_user_mean, k = 1)
+    sigma = np.diag(sigma)
 
-already_rated, predictions = recommend_recipes(df_svd_preds, 2, df_recipe, df_ratings)
+    svd_user_predicted_ratings = np.dot(np.dot(U, sigma), Vt) + user_ratings_mean.reshape(-1, 1)
+    df_svd_preds = pd.DataFrame(svd_user_predicted_ratings, columns = df_user_recipe_ratings.columns)
 
-print(predictions.iloc[0]['rid'])
+    already_rated, predictions = recommend_recipes(df_svd_preds, user_id, df_recipe, df_ratings)
+
+    print(predictions.iloc[0]['rid'])
+
+if __name__ == "__main__":
+    argv = sys.argv
+
+    if len(argv) < 2:
+        print('Error: User ID Argument Need')
+    else:
+        main(argv)
